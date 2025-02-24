@@ -1,0 +1,52 @@
+volumes:
+  db-volume:
+  maildir: {}
+
+services:
+  # Application Service Container
+  app:
+    ports:
+      - "8000:80"
+    build: ./app
+    # Adjust the container name if necessary
+    container_name: app
+    privileged: true
+    volumes:
+      - ./src:/var/www/html
+      - ./app/php.ini:/etc/php.ini
+    command: >
+      /sbin/init
+      postfix start
+  # MySQL Service Container
+  db:
+    # Adjust the container name if necessary
+    container_name: db
+    build:
+      context: ./db
+      args:
+        MYSQL_USER: ${DB_USERNAME}
+        MYSQL_PASSWORD: ${DB_USERNAME}
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: "Asia/Tokyo" # Adjust the timezone as needed
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./db/data:/var/lib/mysql
+      - ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - 3306:3306
+  # Mail Service Container
+  mailhog:
+    image: mailhog/mailhog
+    # Adjust the container name if necessary
+    container_name: mailhog
+    ports:
+      - "8025:8025"
+    environment:
+      MH_STORAGE: maildir
+      MH_MAILDIR_PATH: /tmp
+    volumes:
+      - maildir:/tmp
